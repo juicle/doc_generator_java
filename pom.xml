@@ -19,6 +19,7 @@
         <module>docgen-builder-plugin</module>
         <module>demo</module>
     </modules>
+    
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
