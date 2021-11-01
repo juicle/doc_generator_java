@@ -14,7 +14,7 @@
     <groupId>com.juicle.generator</groupId>
     <artifactId>doc-generator</artifactId>
     <packaging>pom</packaging>
-    <version>1.0</version>
+    <version>1.3</version>
     <modules>
         <module>docgen-builder-plugin</module>
         <module>demo</module>

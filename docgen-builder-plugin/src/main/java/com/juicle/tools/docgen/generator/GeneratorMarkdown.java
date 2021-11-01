@@ -50,15 +50,18 @@ public class GeneratorMarkdown {
         resut.append("\n");
 
         //response data
-        resut.append("**返回参数**\n\n");
-        resut.append("| 字段               | 类型  | 说明                  |\n");
-        resut.append("|:----------|:-------|:-----------------------|\n");
-        for(ResponseInfo responseInfo : listResponseInfo){
-            resut.append("|"+responseInfo.getName());
-            resut.append("|"+responseInfo.getType());
-            resut.append("|"+responseInfo.getNote()+"|\n");
+        if(listResponseInfo != null){
+            resut.append("**返回参数**\n\n");
+            resut.append("| 字段               | 类型  | 说明                  |\n");
+            resut.append("|:----------|:-------|:-----------------------|\n");
+            for(ResponseInfo responseInfo : listResponseInfo){
+                resut.append("|"+responseInfo.getName());
+                resut.append("|"+responseInfo.getType());
+                resut.append("|"+responseInfo.getNote()+"|\n");
+            }
+            resut.append("\n");
         }
-        resut.append("\n");
+
 
         return resut.toString();
     }

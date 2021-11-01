@@ -21,56 +21,18 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.math.BigDecimal;
 import java.util.*;
 
-/**
- * @goal build
- * @requiresDependencyResolution runtime
- */
 public class BuilderMojo extends AbstractMojo {
 
-    /**
-     * @parameter property = "project.basedir"
-     * @required
-     * @readonly
-     */
+
     private File basedir;
-
-    /**
-     * @parameter
-     * @required
-     */
     private String packages;
-
-    /**
-     * @parameter
-     * @required
-     */
     private String requestUrl;
-
-    /**
-     * @parameter
-     * @required
-     */
     private String key;
-
-
-    /**
-     * @parameter
-     * @required
-     */
     private String token;
-
-    /**
-     * @parameter property = "project"
-     * @required
-     * @readonly
-     */
     private MavenProject project;
-
     private ClassLoaderInterface classLoaderInterface;
-
     private String scanSource = File.separator + "src"+ File.separator +"main"+ File.separator +"java" + File.separator;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -79,10 +41,8 @@ public class BuilderMojo extends AbstractMojo {
             GeneratorMarkdown apiDoc = new GeneratorMarkdown();
             //初始化classesLoader
             initClassesLoader();
-
             //递归找出需要扫描的file
             List<File> files = FileFinder.findAllFileNeedToParse(this);
-
             List<Class<?>> clazzs = ClassFinder.findAllClass(this, files);
 
             if (clazzs != null) {
@@ -90,8 +50,6 @@ public class BuilderMojo extends AbstractMojo {
                 for (Class<?> clazz : clazzs) {
                     String catName = "";
                     String apiUrl = "";
-
-                    //get class properties
 
                     //get the cat name
                     if(clazz.isAnnotationPresent(ModuleTitle.class)){
@@ -103,8 +61,6 @@ public class BuilderMojo extends AbstractMojo {
                             RequestMapping requestMapping = clazz.getAnnotation(RequestMapping.class);
                             apiUrl = requestMapping.value()[0];
                         }
-
-
                         //get method properties
 
                         Method[] methods = clazz.getDeclaredMethods();
@@ -122,7 +78,6 @@ public class BuilderMojo extends AbstractMojo {
                             }else{
                                 break;
                             }
-
 
                             if(method.isAnnotationPresent(RequestMapping.class)){
                                 RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
@@ -184,34 +139,78 @@ public class BuilderMojo extends AbstractMojo {
                             if(method.isAnnotationPresent(ResponseData.class)){
                                 ResponseData responseData = method.getAnnotation(ResponseData.class);
                                 Class<?> resClass = responseData.value();
-                                Object o = resClass.newInstance();
-                                Field[] fieldList = o.getClass().getDeclaredFields();
-                                for (Field field : fieldList) {
-                                    //集合类型
-                                    if(isCollectionType(field.getType())){
-                                        ResponseInfo responseHeader = new ResponseInfo();
-                                        if(field.isAnnotationPresent(Column.class)){
-                                            Column column = field.getAnnotation(Column.class);
-                                            responseHeader.setNote(column.name());
-                                        }
-                                        responseHeader.setType("list");
-                                        responseHeader.setName(field.getName());
-                                        listResponseInfo.add(responseHeader);
+                                if(!resClass.isAssignableFrom(Boolean.class)){
+                                    Object o = resClass.newInstance();
+                                    Field[] fieldList = o.getClass().getDeclaredFields();
+                                    for (Field field : fieldList) {
+                                        //集合类型
+                                        if(isCollectionType(field.getType())){
+                                            ResponseInfo responseHeader = new ResponseInfo();
+                                            if(field.isAnnotationPresent(Column.class)){
+                                                Column column = field.getAnnotation(Column.class);
+                                                responseHeader.setNote(column.name());
+                                            }
+                                            responseHeader.setType("list");
+                                            responseHeader.setName(field.getName());
+                                            listResponseInfo.add(responseHeader);
 
-                                        Type t = field.getGenericType();
-                                        ParameterizedType pt = (ParameterizedType) t;
-                                        Class clz = (Class) pt.getActualTypeArguments()[0];
-                                        if(!isBaseType(clz.toString())){
-                                            responseCustomize(listResponseInfo, clz,true);
+                                            Type t = field.getGenericType();
+                                            ParameterizedType pt = (ParameterizedType) t;
+                                            Class clz = (Class) pt.getActualTypeArguments()[0];
+                                            if(!isBaseType(clz.toString())){
+                                                responseCustomize(listResponseInfo, clz,true);
+                                            }else{
+                                                ResponseInfo responseInfo = new ResponseInfo();
+                                                if(field.isAnnotationPresent(Column.class)){
+                                                    Column column = field.getAnnotation(Column.class);
+                                                    responseInfo.setNote(column.name());
+                                                }
+                                                responseInfo.setName(field.getName());
+                                                String type = clz.toString();
+                                                switch (clz.toString()){
+                                                    case "class java.lang.String":
+                                                        type = "String";
+                                                        break;
+                                                    case "class java.lang.Byte":
+                                                        type = "Byte";
+                                                        break;
+                                                    case "class java.lang.Long":
+                                                        type = "Long";
+                                                        break;
+                                                    case "class java.lang.Integer":
+                                                        type = "Integer";
+                                                        break;
+                                                    case "class java.math.BigDecimal":
+                                                        type = "BigDecimal";
+                                                        break;
+                                                    case "class java.lang.Boolean":
+                                                        type = "bool";
+                                                        break;
+                                                    case "class java.util.Date":
+                                                        type = "Date";
+                                                        break;
+                                                    default:
+                                                        break;
+                                                }
+                                                responseInfo.setType(type);
+                                                listResponseInfo.add(responseInfo);
+                                            }
+
+                                        }else if(!isCollectionType(field.getType()) && !isBaseType(field.getType().toString())){
+                                            //自定义类型
+                                            responseCustomize(listResponseInfo, field.getType(),false);
                                         }else{
+                                            if(field.getName() == "serialVersionUID"){
+                                                continue;
+                                            }
                                             ResponseInfo responseInfo = new ResponseInfo();
                                             if(field.isAnnotationPresent(Column.class)){
                                                 Column column = field.getAnnotation(Column.class);
                                                 responseInfo.setNote(column.name());
                                             }
                                             responseInfo.setName(field.getName());
-                                            String type = clz.toString();
-                                            switch (clz.toString()){
+                                            String type = field.getType().toString();
+                                            switch (field.getType().toString()){
                                                 case "class java.lang.String":
                                                     type = "String";
                                                     break;
@@ -239,48 +238,11 @@ public class BuilderMojo extends AbstractMojo {
                                             responseInfo.setType(type);
                                             listResponseInfo.add(responseInfo);
                                         }
-
-                                    }else if(!isCollectionType(field.getType()) && !isBaseType(field.getType().toString())){
-                                        //自定义类型
-                                        responseCustomize(listResponseInfo, field.getType(),false);
-                                    }else{
-                                        ResponseInfo responseInfo = new ResponseInfo();
-                                        if(field.isAnnotationPresent(Column.class)){
-                                            Column column = field.getAnnotation(Column.class);
-                                            responseInfo.setNote(column.name());
-                                        }
-                                        responseInfo.setName(field.getName());
-                                        String type = field.getType().toString();
-                                        switch (field.getType().toString()){
-                                            case "class java.lang.String":
-                                                type = "String";
-                                                break;
-                                            case "class java.lang.Byte":
-                                                type = "Byte";
-                                                break;
-                                            case "class java.lang.Long":
-                                                type = "Long";
-                                                break;
-                                            case "class java.lang.Integer":
-                                                type = "Integer";
-                                                break;
-                                            case "class java.math.BigDecimal":
-                                                type = "BigDecimal";
-                                                break;
-                                            case "class java.lang.Boolean":
-                                                type = "bool";
-                                                break;
-                                            case "class java.util.Date":
-                                                type = "Date";
-                                                break;
-                                            default:
-                                                break;
-                                        }
-                                        responseInfo.setType(type);
-                                        listResponseInfo.add(responseInfo);
                                     }
+                                    apiDoc.setListResponseInfo(listResponseInfo);
+                                }else{
+                                    apiDoc.setListResponseInfo(null);
                                 }
-                                apiDoc.setListResponseInfo(listResponseInfo);
                             }
 
                             //set page content
@@ -312,7 +274,7 @@ public class BuilderMojo extends AbstractMojo {
                 System.out.println("not found");
             }
         }catch (Exception e){
-            System.out.println("upload doc error is " + e.getMessage()+error);
+            System.out.println("upload doc res error is " + e.getMessage()+error);
         }
 
     }
@@ -342,13 +304,17 @@ public class BuilderMojo extends AbstractMojo {
             Object o = resClass.newInstance();
             Field[] fieldList = o.getClass().getDeclaredFields();
             for (Field field : fieldList) {
+                if(field.getName() == "serialVersionUID"){
+                    continue;
+                }
                 ResponseInfo responseInfo = new ResponseInfo();
                 if(field.isAnnotationPresent(Column.class)){
                     Column column = field.getAnnotation(Column.class);
                     responseInfo.setNote(column.name());
                 }
+                responseInfo.setName(field.getName());
                 if(isChilld){
-                    responseInfo.setName("&ensp;&ensp;&#124;--&ensp;"+field.getName());
+                    responseInfo.setName("&ensp;&ensp;|-- &ensp;"+field.getName());
                 }else{
                     responseInfo.setName(field.getName());
                 }
@@ -384,7 +350,7 @@ public class BuilderMojo extends AbstractMojo {
                 res.add(responseInfo);
             }
         }catch(Exception e){
-            System.out.println("upload doc error is " + e.getMessage());
+            System.out.println("upload doc gen error is " + e.getMessage());
         }
     }
 

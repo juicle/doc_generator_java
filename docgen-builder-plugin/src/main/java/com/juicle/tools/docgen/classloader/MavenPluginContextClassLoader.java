@@ -9,7 +9,7 @@ import java.net.URLClassLoader;
 import java.util.List;
 
 /**
- * Created by jialechan on 15/6/24.
+ * Created by juicle on 18/6/24.
  */
 public class MavenPluginContextClassLoader implements ClassLoaderInterface {
 

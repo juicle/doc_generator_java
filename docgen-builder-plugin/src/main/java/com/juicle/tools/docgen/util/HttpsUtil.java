@@ -1,15 +1,11 @@
 package com.juicle.tools.docgen.util;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import org.springframework.util.StringUtils;
 import org.apache.http.Consts;
 import org.apache.http.HeaderIterator;
 import org.apache.http.HttpEntity;

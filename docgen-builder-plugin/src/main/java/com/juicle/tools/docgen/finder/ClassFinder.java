@@ -1,7 +1,6 @@
 package com.juicle.tools.docgen.finder;
 
 import com.juicle.tools.docgen.BuilderMojo;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
